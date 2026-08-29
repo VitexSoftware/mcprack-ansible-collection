@@ -1,0 +1,39 @@
+---
+# postinst already wrote /etc/mcprack/env with a generated SECRET_KEY and the
+# DB URI dbconfig-common produced - we only overlay the deployment-specific
+# keys it can't know on its own, via lineinfile, never a full template
+# overwrite that could clobber SECRET_KEY or the DB URI.
+- name: Set deployment values in /etc/mcprack/env
+  # Quoted so the file stays valid POSIX sh - it's meant to be sourced
+  # directly (`set -a; . /etc/mcprack/env; set +a`) and an unquoted value
+  # containing shell metacharacters (e.g. LDAP_USER_FILTER's parentheses)
+  # would otherwise break that sourcing for every key, not just its own.
+  ansible.builtin.lineinfile:
+    path: /etc/mcprack/env
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}=\"{{ item.value }}\""
+    owner: root
+    group: mcprack
+    mode: '0640'
+  loop: "{{ mcprack_env_settings | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  no_log: true
+  notify: Restart mcprack
+  vars:
+    mcprack_env_settings:
+      DEMO_MODE: "{{ mcprack_demo_mode | lower }}"
+      PUBLIC_BASE_URL: "{{ mcprack_public_base_url }}"
+      SESSION_COOKIE_SECURE: "{{ mcprack_tls_enabled | lower }}"
+      STRICT_SERVER_PERMISSIONS: "{{ mcprack_strict_server_permissions | lower }}"
+      LDAP_ENABLED: "{{ mcprack_ldap_enabled | lower }}"
+      LDAP_SERVER: "{{ mcprack_ldap_server }}"
+      LDAP_BASE_DN: "{{ mcprack_ldap_base_dn }}"
+      LDAP_USER_OU: "{{ mcprack_ldap_user_ou }}"
+      LDAP_USER_FILTER: "{{ mcprack_ldap_user_filter }}"
+      LDAP_BIND_DN: "{{ mcprack_ldap_bind_dn }}"
+      LDAP_BIND_PASSWORD: "{{ mcprack_ldap_bind_password }}"
+      BW_SERVER: "{{ mcprack_bw_server }}"
+      BW_CLIENTID: "{{ mcprack_bw_clientid }}"
+      BW_CLIENTSECRET: "{{ mcprack_bw_clientsecret }}"
+      BW_PASSWORD: "{{ mcprack_bw_password }}"

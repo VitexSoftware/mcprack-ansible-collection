@@ -1,0 +1,19 @@
+---
+# /health (mcprack/app.py) is a deliberately unauthenticated liveness route -
+# checks DB connectivity only, never returns config values, URLs, or tokens.
+- name: Wait for mcprack /health to answer
+  ansible.builtin.uri:
+    url: >-
+      {{ ('http://' ~ mcprack_domain ~ '/health')
+         if (mcprack_reverse_proxy_enabled | bool)
+         else ('http://' ~ mcprack_domain ~ ':' ~ mcprack_bind_port ~ '/health') }}
+    status_code: 200
+    return_content: true
+  register: mcprack_health
+  retries: 10
+  delay: 3
+  until: mcprack_health.status == 200
+
+- name: Show health payload
+  ansible.builtin.debug:
+    var: mcprack_health.json

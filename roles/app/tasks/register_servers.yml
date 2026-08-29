@@ -1,0 +1,16 @@
+---
+- name: Register catalog servers
+  vitexsoftware.mcprack.mcprack_server:
+    name: "{{ item.name }}"
+    label: "{{ item.label | default(item.name) }}"
+    transport: "{{ item.transport }}"
+    url: "{{ item.url | default(omit) }}"
+    command: "{{ item.command | default(omit) }}"
+    args: "{{ item.args | default(omit) }}"
+    category: "{{ item.category | default(omit) }}"
+    enabled: "{{ item.enabled | default(true) }}"
+    state: present
+  become: true
+  loop: "{{ mcprack_catalog_servers }}"
+  loop_control:
+    label: "{{ item.name }}"

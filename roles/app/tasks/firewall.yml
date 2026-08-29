@@ -1,0 +1,32 @@
+---
+- name: Ensure ufw is present
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+  when: mcprack_firewall_enabled | bool
+
+# mcprack.service's ExecStart already binds gunicorn to
+# 0.0.0.0:{{ mcprack_bind_port }} - when the nginx reverse proxy is enabled
+# (tasks/reverse_proxy.yml), only mcprack_http_port is opened here, so
+# mcprack_bind_port stays unreachable from outside even though gunicorn
+# itself isn't loopback-bound. Without the reverse proxy, mcprack_bind_port
+# is the intended access path and gets opened directly.
+- name: Allow mcprack HTTP port through UFW from trusted networks
+  community.general.ufw:
+    rule: allow
+    port: "{{ mcprack_http_port | string }}"
+    proto: tcp
+    src: "{{ item }}"
+    comment: "mcprack"
+  loop: "{{ mcprack_ufw_allow_from }}"
+  when: mcprack_firewall_enabled | bool and (mcprack_reverse_proxy_enabled | bool)
+
+- name: Allow mcprack gunicorn port through UFW from trusted networks (no reverse proxy)
+  community.general.ufw:
+    rule: allow
+    port: "{{ mcprack_bind_port | string }}"
+    proto: tcp
+    src: "{{ item }}"
+    comment: "mcprack"
+  loop: "{{ mcprack_ufw_allow_from }}"
+  when: mcprack_firewall_enabled | bool and not (mcprack_reverse_proxy_enabled | bool)

@@ -1,0 +1,15 @@
+---
+- name: Restart mcprack
+  ansible.builtin.systemd:
+    name: mcprack
+    state: restarted
+    daemon_reload: true
+  become: true
+
+- name: Reload nginx
+  # `reloaded` (SIGHUP) has been observed to not reliably pick up a freshly
+  # written sites-enabled/mcprack.conf - a full restart does.
+  ansible.builtin.systemd:
+    name: nginx
+    state: restarted
+  become: true

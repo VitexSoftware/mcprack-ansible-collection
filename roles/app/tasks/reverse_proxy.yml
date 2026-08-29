@@ -1,0 +1,51 @@
+---
+# nginx terminates plain HTTP on mcprack_http_port and proxies to gunicorn
+# on loopback-only mcprack_bind_port, so the app can be reached with no
+# port suffix. Gunicorn itself still binds 0.0.0.0 (baked into the packaged
+# mcprack.service unit, not something this role controls) - firewall.yml
+# only opens mcprack_http_port from trusted networks, never
+# mcprack_bind_port, so it stays unreachable from outside even though it's
+# not loopback-bound.
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+  when: mcprack_reverse_proxy_enabled | bool
+
+- name: Deploy mcprack nginx vhost
+  ansible.builtin.template:
+    src: nginx-mcprack.conf.j2
+    dest: /etc/nginx/sites-available/mcprack.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: mcprack_reverse_proxy_enabled | bool
+  notify: Reload nginx
+
+- name: Enable mcprack nginx vhost
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/mcprack.conf
+    dest: /etc/nginx/sites-enabled/mcprack.conf
+    state: link
+  when: mcprack_reverse_proxy_enabled | bool
+  notify: Reload nginx
+
+- name: Remove default nginx site (would otherwise conflict on port 80)
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  when: mcprack_reverse_proxy_enabled | bool
+  notify: Reload nginx
+
+- name: Ensure nginx is enabled and running
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: started
+  when: mcprack_reverse_proxy_enabled | bool
+
+# Apply the vhost/default-site changes now (handlers otherwise only run at
+# end of play) so firewall.yml/verify.yml, which follow immediately, see
+# nginx actually serving the mcprack vhost rather than its stale default.
+- name: Apply nginx config changes now
+  ansible.builtin.meta: flush_handlers

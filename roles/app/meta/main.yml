@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  role_name: app
+  namespace: vitexsoftware
+  author: Vitex Software
+  description: Installs and configures the mcprack MCP server catalog application.
+  license: MIT
+  min_ansible_version: "2.15"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+    - name: Ubuntu
+      versions:
+        - jammy
+        - noble
+  galaxy_tags:
+    - mcp
+    - mcprack
+    - flask
+    - catalog
+dependencies: []

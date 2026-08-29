@@ -1,0 +1,24 @@
+---
+- name: Generate/retrieve local passwords for configured mcprack admins
+  ansible.builtin.set_fact:
+    mcprack_admin_passwords: >-
+      {{ mcprack_admin_passwords | default({}) | combine({
+        item: lookup('ansible.builtin.password',
+                      playbook_dir ~ '/../credentials/mcprack-admin-' ~ item ~ '.txt',
+                      length=24)
+      }) }}
+  loop: "{{ mcprack_admin_users }}"
+  no_log: true
+  when: mcprack_admin_users | length > 0
+
+- name: Ensure local mcprack admin accounts exist
+  vitexsoftware.mcprack.mcprack_user:
+    username: "{{ item }}"
+    password: "{{ mcprack_admin_passwords[item] }}"
+    admin: true
+    enabled: true
+    force_password: "{{ mcprack_admin_force_password }}"
+    state: present
+  become: true
+  loop: "{{ mcprack_admin_users }}"
+  no_log: true

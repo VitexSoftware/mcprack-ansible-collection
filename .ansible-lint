@@ -1,0 +1,10 @@
+---
+# var-naming[no-role-prefix] wants role vars prefixed with the role's own
+# name (app_*). This role deliberately keeps the mcprack_* prefix instead,
+# since these variables map 1:1 onto the mcprack application's own
+# /etc/mcprack/env config keys (see roles/app/tasks/configure.yml) and onto
+# the mcprack CLI's own vocabulary - renaming them to app_* would obscure
+# that mapping for no benefit, since "app" says nothing about what's being
+# configured.
+skip_list:
+  - var-naming[no-role-prefix]

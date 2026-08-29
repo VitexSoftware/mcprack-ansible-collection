@@ -1,0 +1,57 @@
+---
+- name: Install and configure mcprack
+  hosts: mcprack_servers
+  become: true
+  vars:
+    mcprack_domain: mcprack.example.com
+    mcprack_admin_users:
+      - alice
+    mcprack_catalog_servers:
+      - name: netbox
+        label: NetBox
+        transport: http
+        url: "https://netbox.example.com/mcp"
+        category: infra
+      - name: abraflexi
+        label: AbraFlexi
+        transport: stdio
+        command: mcp-server-abraflexi
+        args: ["--sandbox"]
+        category: erp
+  roles:
+    - vitexsoftware.mcprack.app
+
+  tasks:
+    - name: Grant bob access to netbox but deny abraflexi
+      vitexsoftware.mcprack.mcprack_user_access:
+        username: bob
+        server: abraflexi
+        access: deny
+
+    - name: Pre-select netbox for bob's generated config
+      vitexsoftware.mcprack.mcprack_user_selection:
+        username: bob
+        servers: [netbox]
+
+    - name: Set a per-server secret
+      vitexsoftware.mcprack.mcprack_secret:
+        server: abraflexi
+        key: ABRAFLEXI_PASSWORD
+        value: "{{ vaulted_abraflexi_password }}"
+
+    - name: Define a reusable template
+      vitexsoftware.mcprack.mcprack_template:
+        name: standard-devops
+        label: Standard DevOps Bundle
+        select: [netbox]
+
+    - name: Apply the template to bob
+      vitexsoftware.mcprack.mcprack_template_apply:
+        name: standard-devops
+        username: bob
+
+    - name: Fetch bob's generated Claude config
+      vitexsoftware.mcprack.mcprack_user_config:
+        username: bob
+        client: claude
+      register: bob_claude_config

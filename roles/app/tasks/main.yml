@@ -1,0 +1,21 @@
+---
+- name: Install and configure the mcprack package
+  ansible.builtin.include_tasks: repo.yml
+
+- name: Apply deployment settings to /etc/mcprack/env
+  ansible.builtin.include_tasks: configure.yml
+
+- name: Reverse proxy (nginx) for mcprack
+  ansible.builtin.include_tasks: reverse_proxy.yml
+
+- name: Firewall rules for mcprack
+  ansible.builtin.include_tasks: firewall.yml
+
+- name: Verify mcprack is up and healthy
+  ansible.builtin.include_tasks: verify.yml
+
+- name: Create local admin accounts
+  ansible.builtin.include_tasks: admins.yml
+
+- name: Register catalog servers
+  ansible.builtin.include_tasks: register_servers.yml

@@ -1,0 +1,28 @@
+namespace: vitexsoftware
+name: mcprack
+version: 1.0.0
+readme: README.md
+authors:
+  - Vitex Software <info@vitexsoftware.cz>
+description: >-
+  Install and manage the mcprack MCP server catalog / self-service portal
+  application, with idempotent modules wrapping its command-line management
+  surface (users, catalog servers, secrets, templates).
+license:
+  - MIT
+license_file: LICENSE
+tags:
+  - mcp
+  - mcprack
+  - flask
+  - catalog
+  - selfservice
+  - vitexsoftware
+repository: https://github.com/VitexSoftware/mcprack-ansible-collection
+homepage: https://github.com/VitexSoftware/mcprack
+issues: https://github.com/VitexSoftware/mcprack-ansible-collection/issues
+build_ignore:
+  - '*.tar.gz'
+  - tests/output
+dependencies:
+  community.general: ">=7.0.0"

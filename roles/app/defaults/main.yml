@@ -1,0 +1,111 @@
+---
+# ==============================================================================
+# vitexsoftware.mcprack.app - installs and configures the mcprack web
+# application itself (the Flask MCP-server catalog/self-service portal,
+# https://github.com/VitexSoftware/mcprack). This collection does not
+# manage individual MCP servers' own runtime (e.g. running stdio servers as
+# systemd services) - only the mcprack catalog/portal application.
+# ==============================================================================
+
+# --- Package -------------------------------------------------------------
+# 'latest' installs whatever is newest on repo.vitexsoftware.com. Pin an
+# explicit version (e.g. "1.4.0-1") once reproducible deploys matter more
+# than always tracking newest.
+mcprack_version: "latest"
+
+# --- Network / TLS ---------------------------------------------------------
+# mcprack explicitly documents and supports a plain-HTTP "private intranet
+# install" mode (SESSION_COOKIE_SECURE=false), which is what
+# mcprack_tls_enabled: false selects below. This role does not configure a
+# TLS certificate itself - flip mcprack_tls_enabled to true only once a
+# cert is actually terminated in front of nginx (e.g. via a separate
+# certbot role), then set mcprack_domain to a publicly resolvable name.
+mcprack_domain: "mcprack.example.com"
+mcprack_bind_port: 8912
+mcprack_tls_enabled: false
+
+# nginx reverse-proxies mcprack_http_port to gunicorn's loopback-only
+# mcprack_bind_port (see tasks/reverse_proxy.yml). Set to false to expose
+# mcprack_bind_port directly instead (no nginx).
+mcprack_reverse_proxy_enabled: true
+mcprack_http_port: 80
+
+# The URL mcprack is actually reachable at, used to build absolute
+# /proxy/mcp/<token>/<id> relay URLs for `mcprack user config show/download`
+# (CLI invocations have no real web request to infer a host from).
+mcprack_public_base_url: ""
+
+# Gate the UFW firewall tasks (and the community.general dependency they
+# need) entirely - set to false on hosts that manage firewalling another
+# way, or that don't have community.general installed.
+mcprack_firewall_enabled: true
+
+# Source networks allowed to reach mcprack (mcprack_http_port when the
+# reverse proxy is enabled, mcprack_bind_port directly otherwise) over UFW.
+# Empty by default - define per-deployment, e.g. in a vaulted vars file.
+mcprack_ufw_allow_from: []
+
+# --- Database (PostgreSQL via dbconfig-common) ------------------------------
+# PostgreSQL is preferred over sqlite: sqlite doesn't cope well with
+# gunicorn's multiple worker processes writing concurrently.
+mcprack_db_type: pgsql
+mcprack_pg_host: localhost
+# Local peer/"ident" auth (postgres OS user via unix socket) - no admin
+# password needed when PostgreSQL runs on this same host.
+mcprack_pg_authmethod_admin: ident
+# Only used when mcprack_pg_authmethod_admin == "password".
+mcprack_pg_admin_user: postgres
+mcprack_pg_admin_pass: ""
+# Password for the mcprack application's own DB role - set this for real in
+# a vaulted vars file, not here.
+mcprack_db_password: ""
+
+# --- LDAP (Active Directory) ------------------------------------------------
+mcprack_ldap_enabled: false
+mcprack_ldap_server: "ldap://ldap.example.com:389"
+mcprack_ldap_base_dn: "dc=example,dc=com"
+mcprack_ldap_user_ou: "ou=Users,{{ mcprack_ldap_base_dn }}"
+mcprack_ldap_user_filter: "(sAMAccountName=%(user)s)"
+# Anonymous bind if left empty - set both in a vaulted vars file if your AD
+# requires an authenticated bind account.
+mcprack_ldap_bind_dn: ""
+mcprack_ldap_bind_password: ""
+
+# --- Vaultwarden (credential storage mcprack uses for MCP server secrets) ---
+mcprack_bw_server: ""
+mcprack_bw_clientid: ""
+mcprack_bw_clientsecret: ""
+mcprack_bw_password: ""
+
+# --- Application behaviour ---------------------------------------------------
+mcprack_demo_mode: false
+# true would lock every user out of every server until explicitly granted -
+# see debian/README.Debian in the mcprack repo before flipping this on.
+mcprack_strict_server_permissions: false
+
+# --- Local admin accounts ----------------------------------------------------
+# Usernames to create as local mcprack admins (see tasks/admins.yml).
+# Passwords are auto-generated and cached in
+# credentials/mcprack-admin-<user>.txt at the playbook's parent directory
+# (gitignore it - not vaulted vars, generated on first run).
+mcprack_admin_users: []
+
+# When true (default), re-applies the cached password to an already-existing
+# admin account on every run via vitexsoftware.mcprack.mcprack_user, keeping
+# behaviour consistent with the cached credentials file being authoritative.
+# Set false to only set the password at account-creation time.
+mcprack_admin_force_password: true
+
+# --- Catalog servers ----------------------------------------------------------
+# List of MCP servers to register in the catalog via
+# vitexsoftware.mcprack.mcprack_server (tasks/register_servers.yml). Each
+# item:
+#   name        (required) unique server name/key
+#   label       (optional) display label, defaults to name
+#   transport   (required) one of: stdio | http | sse
+#   command     (stdio only) command to run
+#   args        (stdio only, list[str]) command arguments
+#   url         (http/sse only) endpoint URL
+#   category    (optional) catalog grouping
+#   enabled     (optional, default true)
+mcprack_catalog_servers: []

@@ -1,0 +1,70 @@
+---
+- name: Ensure gnupg is present (apt_repository needs it even with signed-by)
+  ansible.builtin.apt:
+    name: gnupg
+    state: present
+
+- name: Ensure VitexSoftware apt keyring is present
+  ansible.builtin.get_url:
+    url: https://repo.vitexsoftware.com/KEY.gpg
+    dest: /usr/share/keyrings/vitex.gpg
+    mode: '0644'
+
+- name: Ensure VitexSoftware apt repo is present
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/vitex.gpg] http://repo.vitexsoftware.com {{ ansible_distribution_release }} main backports"
+    state: present
+
+- name: Install local PostgreSQL server + psycopg2 driver
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - python3-psycopg2
+    state: present
+    update_cache: true
+  when: mcprack_db_type == "pgsql" and mcprack_pg_host in ["localhost", "127.0.0.1"]
+
+- name: Ensure PostgreSQL is running
+  ansible.builtin.systemd:
+    name: postgresql
+    state: started
+    enabled: true
+  when: mcprack_db_type == "pgsql" and mcprack_pg_host in ["localhost", "127.0.0.1"]
+
+# debconf-utils provides debconf-get-selections, which the debconf module
+# needs internally for vtype=password questions (it can't debconf-show a
+# password value to check current state, so it shells out instead).
+- name: Ensure debconf-utils is present (debconf module needs it for password vtype)
+  ansible.builtin.apt:
+    name: debconf-utils
+    state: present
+
+# Preseeding these debconf answers is what lets `apt install mcprack` run
+# fully unattended (no interactive dbconfig-common prompt) and land on
+# PostgreSQL instead of mcprack's sqlite default. Standard dbconfig-common
+# question names - same pattern used by any dbconfig-common-enabled Debian
+# package, not mcprack-specific.
+- name: Preseed mcprack dbconfig-common answers
+  ansible.builtin.debconf:
+    name: mcprack
+    question: "{{ item.q }}"
+    value: "{{ item.v }}"
+    vtype: "{{ item.t }}"
+  loop:
+    - { q: "mcprack/dbconfig-install", v: "true", t: "boolean" }
+    - { q: "mcprack/database-type", v: "{{ mcprack_db_type }}", t: "select" }
+    - { q: "mcprack/pgsql/authmethod-admin", v: "{{ mcprack_pg_authmethod_admin }}", t: "select" }
+    - { q: "mcprack/pgsql/admin-user", v: "{{ mcprack_pg_admin_user }}", t: "string" }
+    - { q: "mcprack/pgsql/admin-pass", v: "{{ mcprack_pg_admin_pass }}", t: "password" }
+    - { q: "mcprack/remote/host", v: "{{ mcprack_pg_host }}", t: "string" }
+    - { q: "mcprack/pgsql/app-pass", v: "{{ mcprack_db_password }}", t: "password" }
+    - { q: "mcprack/app-password-confirm", v: "{{ mcprack_db_password }}", t: "password" }
+  no_log: true
+  when: mcprack_db_type == "pgsql"
+
+- name: Install mcprack
+  ansible.builtin.apt:
+    name: "mcprack{{ ('=' + mcprack_version) if mcprack_version != 'latest' else '' }}"
+    state: present
+    update_cache: true
+  register: mcprack_install
