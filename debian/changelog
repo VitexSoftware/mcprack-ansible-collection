@@ -1,0 +1,5 @@
+mcprack-ansible-collection (1.0.0) UNRELEASED; urgency=medium
+
+  * Debian packaging of the vitexsoftware.mcprack Ansible collection.
+
+ -- Vítězslav Dvořák <info@vitexsoftware.cz>  Wed, 11 Nov 2026 13:00:00 +0100

@@ -1,0 +1,11 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_test:
+	true
+
+override_dh_install:
+	dh_install
+	find debian/ansible-collection-vitexsoftware-mcprack -name __pycache__ -type d -prune -exec rm -rf {} +

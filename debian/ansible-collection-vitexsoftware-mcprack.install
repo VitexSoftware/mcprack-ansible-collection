@@ -1,0 +1,7 @@
+galaxy.yml usr/share/ansible/collections/ansible_collections/vitexsoftware/mcprack
+README.md usr/share/ansible/collections/ansible_collections/vitexsoftware/mcprack
+LICENSE usr/share/ansible/collections/ansible_collections/vitexsoftware/mcprack
+CHANGELOG.rst usr/share/ansible/collections/ansible_collections/vitexsoftware/mcprack
+meta usr/share/ansible/collections/ansible_collections/vitexsoftware/mcprack
+plugins usr/share/ansible/collections/ansible_collections/vitexsoftware/mcprack
+roles usr/share/ansible/collections/ansible_collections/vitexsoftware/mcprack

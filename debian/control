@@ -1,0 +1,26 @@
+Source: mcprack-ansible-collection
+Section: admin
+Priority: optional
+Maintainer: Vítězslav Dvořák <info@vitexsoftware.cz>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/VitexSoftware/mcprack-ansible-collection
+Vcs-Git: https://github.com/VitexSoftware/mcprack-ansible-collection.git
+Vcs-Browser: https://github.com/VitexSoftware/mcprack-ansible-collection
+Rules-Requires-Root: no
+
+Package: ansible-collection-vitexsoftware-mcprack
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ansible-core (>= 2.15) | ansible (>= 8)
+Recommends: ansible-collection-community-general
+Description: Ansible collection to install and manage mcprack
+ The vitexsoftware.mcprack collection installs, configures and manages mcprack,
+ the catalog and client-configuration portal for MCP (Model Context Protocol)
+ servers.
+ .
+ It provides the vitexsoftware.mcprack.app role (package, /etc/mcprack/env,
+ nginx front end, administrators, catalog entries) and modules that wrap the
+ mcprack command line: mcprack_server, mcprack_user, mcprack_user_access,
+ mcprack_user_selection, mcprack_user_override, mcprack_user_config,
+ mcprack_secret, mcprack_template and mcprack_template_apply.
